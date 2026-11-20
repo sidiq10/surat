@@ -418,7 +418,7 @@ function sampleState() {
       ].map(([program, participants, date]) => ({ program, participants: String(participants), mak: DEFAULT_MAK, date, lsp: DEFAULT_LSP }))
     },
     common: { kejuruan: "Refrigerasi", batch: "5", ta: "2026" },
-    sk: { number: "2.10/737/LP.05.01/XI/2026", date: "2026-11-02", tglUjk: "4 November sd. 9 November 2026", signer: "Yose Rizal, S.TP., M.M.", showTtd: true },
+    sk: { number: "2.10/737/LP.05.01/XI/2026", date: "2026-11-02", tglUjk: "4 November sd. 9 November 2026", signer: "\nYose Rizal, S.TP., M.M.", showTtd: true },
     st: {
       number: "2.10/1651/LP.05.01/XI/2026", date: "2026-11-02",
       notaNomor: "2.10/687/LP.05.01/X/2026", notaTanggal: "27 Oktober 2026",
@@ -563,11 +563,12 @@ function cleanGroups(groups) {
 /* ---------- 2. SK Tim Pelaksana ---------- */
 function buildSkView(S) {
   const c = S.common, k = S.sk;
+  const signer = String(k.signer ?? "").replace(/\r\n/g, "\n");
   return {
     nomor: trim(k.number) || "[Nomor surat]",
     batch: trim(c.batch), kejuruan: trim(c.kejuruan), kejuruan_up: trim(c.kejuruan).toUpperCase(), ta: trim(c.ta),
     tgl_ujk: trim(k.tglUjk), tgl_tetap: formatDateId(k.date) || "[Tanggal penetapan]",
-    ttd_nama: trim(k.signer) || "${nama_pengirim}",
+    ttd_nama: signer.trim() ? signer : "${nama_pengirim}",
 	    ttd: k.showTtd === false ? "" : "${ttd_pengirim}",
     groups: cleanGroups(S.groups)
   };
