@@ -338,6 +338,15 @@
             <div class="field"><label for="stpTa">Tahun anggaran</label><input type="text" id="stpTa" data-bind="stp.ta"></div>
           </div>
         </div>
+        <div class="form-section" data-docs="stp3">
+          <h3>Kolom tabel lampiran (khusus format ≥3 orang)</h3>
+          <div class="field-grid">
+            <div class="field wide"><label for="stpRosterProgram">Program Pelatihan / Skema Sertifikasi</label><input type="text" id="stpRosterProgram" data-bind="stp.rosterProgram" placeholder="Kosongkan untuk mengikuti Kegiatan / pelatihan di atas"></div>
+            <div class="field"><label for="stpRosterTgl">Tanggal UJK</label><input type="text" id="stpRosterTgl" data-bind="stp.rosterTgl" placeholder="Kosongkan untuk mengikuti Tanggal pelaksanaan"></div>
+            <div class="field wide"><label for="stpRosterLokasi">Lokasi UJK</label><input type="text" id="stpRosterLokasi" data-bind="stp.rosterLokasi" placeholder="Kosongkan untuk mengikuti Tempat dan Alamat lokasi"></div>
+          </div>
+          <p class="field-hint">Kolom lampiran halaman kedua dapat diubah terpisah. Jika kosong, nilainya mengikuti bagian Kegiatan dan lokasi.</p>
+        </div>
         <div class="form-section" data-docs="stp stp3">
           <h3>Pegawai yang ditugaskan (Penyelia)</h3>
           <div id="stpPeopleBox"></div>
@@ -470,6 +479,7 @@ function sampleState() {
       sender: "\nYose Rizal, S.TP., M.M.", showTtd: true,
       kegiatan: "Pelatihan Kualifikasi 5 ABT Bidang Produktivitas", tempat: "P3D DKI Jakarta",
       alamat: "Jl. H. Naman No. 1 Pondok Kelapa, Duren Sawit", tgl: "06 November 2026", ta: "2026",
+      rosterProgram: "", rosterTgl: "", rosterLokasi: "",
       people: [{ nama: "Asep Ismatulloh", nip: "19830606 202521 1 095", pangkat: "PPPK (V)", jabatan: "Pengadministrasi Perkantoran" }]
     },
     groups: [
@@ -683,6 +693,7 @@ function buildStpView(S) {
     nomor: trim(k.number) || "[Nomor surat]",
     tanggal: formatDateId(k.date, true) || "[Tanggal surat]",
     kegiatan: trim(k.kegiatan), tempat: trim(k.tempat), alamat: trim(k.alamat), tgl: trim(k.tgl), ta: trim(k.ta),
+    rosterProgram: trim(k.rosterProgram), rosterTgl: trim(k.rosterTgl), rosterLokasi: trim(k.rosterLokasi),
     people: (k.people || []).map((person) => ({
       nama: trim(person.nama), nip: trim(person.nip), pangkat: trim(person.pangkat), jabatan: trim(person.jabatan)
     })),
@@ -691,6 +702,15 @@ function buildStpView(S) {
     ttd: k.showTtd === false ? "" : "${ttd_pengirim}"
   };
 }
+
+function buildStpRosterDetails(v) {
+  return {
+    program: trim(v.rosterProgram) || v.kegiatan,
+    tgl: trim(v.rosterTgl) || v.tgl,
+    lokasi: trim(v.rosterLokasi) || [v.tempat, v.alamat].filter(Boolean).join(" ")
+  };
+}
+
 // ${ttd_pengirim} dan ${nama_pengirim} sengaja tidak disentuh: Srikandi yang mengisinya (lihat Mode Srikandi).
 function fillStpXml(xml, v, options = {}) {
   const people = v.people.length ? v.people : [{ nama: "", nip: "", pangkat: "", jabatan: "" }];
@@ -756,14 +776,15 @@ function stAttachmentTemplate(xml) {
 function appendStpRosterPage(xml, stXml, v) {
   const pageTemplate = stAttachmentTemplate(stXml);
   const assessors = v.people.filter((person) => person.nama);
+  const roster = buildStpRosterDetails(v);
   const pageView = {
     nomor: v.nomor, tanggal: v.tanggal, batch: "", kejuruan: "", ta: v.ta,
     nota_nomor: "", nota_tanggal: "", nota_hal: "", txid: "",
     nama: "${nama_pengirim}", ttd: "${ttd_pengirim}",
     groups: [{
-      program: v.kegiatan,
-      tgl: v.tgl,
-      lokasiSt: [v.tempat, v.alamat].filter(Boolean).join(" "),
+      program: roster.program,
+      tgl: roster.tgl,
+      lokasiSt: roster.lokasi,
       assessors
     }]
   };
@@ -1154,9 +1175,10 @@ function previewStp(v, rosterMode = false) {
     ${moveClosingToPageTwo ? "" : closing + signature}`;
   if (rosterMode) {
     const people = v.people.filter((person) => person.nama);
+    const roster = buildStpRosterDetails(v);
     const body = people.map((person, i) => {
       const merged = i === 0
-        ? `<td rowspan="${people.length}">${h(v.kegiatan)}</td><td rowspan="${people.length}">${h(v.tgl)}<br><br>${h([v.tempat, v.alamat].filter(Boolean).join(" "))}</td>`
+        ? `<td rowspan="${people.length}">${h(roster.program)}</td><td rowspan="${people.length}">${h(roster.tgl)}<br><br>${h(roster.lokasi)}</td>`
         : "";
       return `<tr><td>${i + 1}.</td><td class="l">${h(person.nama)}<br>${h(person.nip)}</td><td>${h(person.pangkat)}</td><td>${h(person.jabatan)}</td>${merged}</tr>`;
     }).join("");
